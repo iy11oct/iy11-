@@ -473,7 +473,12 @@ export default function Home() {
         type: blob.type || "image/png",
       });
       const w = clamp(Math.round(width), 8, 160);
-      const sourcePalette = activePalette.map((color) => ({
+      const black = palette.find((color) => color.code === "H7");
+      const displayPalette =
+        black && !activePalette.some((color) => color.code === "H7")
+          ? [...activePalette, black]
+          : activePalette;
+      const sourcePalette = displayPalette.map((color) => ({
         id: `local-${color.code}`,
         primaryBrand: "MARD" as const,
         primaryCode: color.code,
@@ -486,18 +491,26 @@ export default function Home() {
       const result = await imageFileToBeads(file, {
         width: w,
         maxColors:
-          friendliness === "easy"
-            ? Math.min(36, sourcePalette.length)
-            : sourcePalette.length,
+          friendliness === "detail"
+            ? sourcePalette.length
+            : friendliness === "balanced"
+              ? Math.min(48, sourcePalette.length)
+              : Math.min(36, sourcePalette.length),
         palette: sourcePalette,
         backgroundMode: "keep",
         backgroundColor: [255, 255, 255],
         tolerance: 48,
-        speckleReduction: reduceNoise ? (friendliness === "easy" ? 4 : 3) : 0,
+        speckleReduction: reduceNoise
+          ? friendliness === "detail"
+            ? 1
+            : friendliness === "balanced"
+              ? 2
+              : 4
+          : 0,
         generationStyle: styleMode === "photo" ? "realistic" : "cartoon",
       });
       const byId = new Map(
-        sourcePalette.map((color, index) => [color.id, activePalette[index]]),
+        sourcePalette.map((color, index) => [color.id, displayPalette[index]]),
       );
       const white =
         palette.find((color) => color.code === "H2") ||
