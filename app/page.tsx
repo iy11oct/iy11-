@@ -1019,67 +1019,69 @@ export default function Home() {
               </button>
             </div>
           </div>
-          <div className="pattern-stage mt-3">
-            {pattern ? (
-              <canvas
-                ref={patternCanvasRef}
-                className="pattern-canvas"
-                aria-label="完整拼豆图纸"
-                onClick={editPatternCell}
-              />
-            ) : (
-              <div className="text-center text-[#6f6254]">
-                <p className="font-semibold">等待生成图纸</p>
-                <p className="mt-2 text-sm">完成左侧设置后点击“生成图纸”。</p>
+          <div className="result-layout mt-3">
+            <div className="pattern-stage">
+              {pattern ? (
+                <canvas
+                  ref={patternCanvasRef}
+                  className="pattern-canvas"
+                  aria-label="完整拼豆图纸"
+                  onClick={editPatternCell}
+                />
+              ) : (
+                <div className="text-center text-[#6f6254]">
+                  <p className="font-semibold">等待生成图纸</p>
+                  <p className="mt-2 text-sm">完成左侧设置后点击“生成图纸”。</p>
+                </div>
+              )}
+            </div>
+            {pattern && (
+              <div className="editor-strip mt-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="setting-label">图纸微调</p>
+                    <p className="text-xs text-[#7d756a]">
+                      选择色号后点击图纸格子即可修改
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className={`tool-button ${pickColorMode ? "selected" : ""}`}
+                      onClick={() => setPickColorMode(!pickColorMode)}
+                    >
+                      吸取颜色
+                    </button>
+                    <button
+                      type="button"
+                      className="tool-button"
+                      onClick={undoPatternEdit}
+                    >
+                      撤销
+                    </button>
+                  </div>
+                </div>
+                <div className="swatch-row mt-3">
+                  {activePalette.map((color) => (
+                    <button
+                      key={color.code}
+                      type="button"
+                      className={`swatch-button ${editColor?.code === color.code && !pickColorMode ? "selected" : ""}`}
+                      title={`选择 ${color.code}`}
+                      aria-label={`选择 ${color.code}`}
+                      onClick={() => {
+                        setEditColor(color);
+                        setPickColorMode(false);
+                      }}
+                    >
+                      <span style={{ backgroundColor: color.hex }} />
+                      <small>{color.code}</small>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
-          {pattern && (
-            <div className="editor-strip mt-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <p className="setting-label">图纸微调</p>
-                  <p className="text-xs text-[#7d756a]">
-                    选择色号后点击图纸格子即可修改
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    className={`tool-button ${pickColorMode ? "selected" : ""}`}
-                    onClick={() => setPickColorMode(!pickColorMode)}
-                  >
-                    吸取颜色
-                  </button>
-                  <button
-                    type="button"
-                    className="tool-button"
-                    onClick={undoPatternEdit}
-                  >
-                    撤销
-                  </button>
-                </div>
-              </div>
-              <div className="swatch-row mt-3">
-                {activePalette.map((color) => (
-                  <button
-                    key={color.code}
-                    type="button"
-                    className={`swatch-button ${editColor?.code === color.code && !pickColorMode ? "selected" : ""}`}
-                    title={`选择 ${color.code}`}
-                    aria-label={`选择 ${color.code}`}
-                    onClick={() => {
-                      setEditColor(color);
-                      setPickColorMode(false);
-                    }}
-                  >
-                    <span style={{ backgroundColor: color.hex }} />
-                    <small>{color.code}</small>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
           {pattern && (
             <>
               <div className="mt-4 flex flex-wrap gap-2">
