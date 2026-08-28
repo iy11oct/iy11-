@@ -943,7 +943,7 @@ export default function Home() {
       <header className="border-b border-[#dcd3c5] bg-[#fffdf8]">
         <div className="mx-auto max-w-7xl px-4 py-5 sm:px-7">
           <p className="text-sm font-semibold tracking-wide text-[#315c58]">
-            图片转拼豆图纸 · 第五版
+            正式版1.0图片转拼豆图纸 · 第五版
           </p>
           <h1 className="mt-1 text-2xl font-semibold sm:text-3xl">
             上传图片，裁剪后生成拼豆图纸
