@@ -13,6 +13,8 @@ canvas { image-rendering: pixelated; }
 .upload-zone:hover { border-color: #315c58; background: #edf6ea; }
 .upload-button { border: 0; background: transparent; color: #315c58; font-size: .88rem; font-weight: 700; }
 .upload-button:focus-visible { outline: 2px solid #315c58; outline-offset: 3px; }
+.processing-panel { border-top: 1px solid #e5ded2; padding-top: .8rem; }
+.range-input { width: 100%; margin-top: .5rem; accent-color: #315c58; }
 .setting-button, .small-choice, .tool-button, .secondary-button, .close-button { border: 1px solid #cfc6b8; border-radius: 6px; background: #fff; color: #3b4650; transition: .15s ease; }
 .setting-button { padding: .55rem .35rem; font-size: .86rem; font-weight: 600; }
 .small-choice { padding: .45rem .15rem; font-size: .73rem; }
