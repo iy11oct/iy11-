@@ -2,6 +2,7 @@
 
 import {
   ChangeEvent,
+  MouseEvent,
   PointerEvent,
   useEffect,
   useMemo,
@@ -90,6 +91,9 @@ export default function Home() {
   const [showGrid, setShowGrid] = useState(true);
   const [reduceNoise, setReduceNoise] = useState(true);
   const dithering = false;
+  const [editColor, setEditColor] = useState<Color | null>(null);
+  const [pickColorMode, setPickColorMode] = useState(false);
+  const [editHistory, setEditHistory] = useState<Pattern[]>([]);
   const [status, setStatus] = useState("上传图片后开始制作");
   const imageRef = useRef<HTMLImageElement | null>(null);
   const patternCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -123,6 +127,9 @@ export default function Home() {
       .then((data: { colors: Color[] }) => {
         const colors = data.colors.filter((color) => color.rgb?.length === 3);
         setPalette(colors);
+        setEditColor(
+          colors.find((color) => color.code === "H7") || colors[0] || null,
+        );
         setPaletteStatus(`色卡已加载：${colors.length} 色`);
       })
       .catch(() => setPaletteStatus("色卡加载失败，请刷新页面"));
@@ -534,6 +541,7 @@ export default function Home() {
       setWidth(result.width);
       setHeight(result.height);
       setPattern(next);
+      setEditHistory([]);
       setStatus(
         `已生成 ${result.width} × ${result.height} 图纸，共 ${next.usage.length} 个色号`,
       );
@@ -710,6 +718,49 @@ export default function Home() {
       }
     });
   };
+  const editPatternCell = (event: MouseEvent<HTMLCanvasElement>) => {
+    if (!pattern) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = Math.floor(
+      ((event.clientX - rect.left) / rect.width) * pattern.width,
+    );
+    const y = Math.floor(
+      ((event.clientY - rect.top) / rect.height) * pattern.height,
+    );
+    if (x < 0 || y < 0 || x >= pattern.width || y >= pattern.height) return;
+    const index = y * pattern.width + x;
+    const clicked = pattern.cells[index];
+    if (pickColorMode) {
+      setEditColor(clicked);
+      setPickColorMode(false);
+      setStatus(`已吸取 ${clicked.code}，可以继续修改图纸`);
+      return;
+    }
+    if (!editColor || clicked.code === editColor.code) return;
+    const cells = pattern.cells.slice();
+    cells[index] = editColor;
+    const counts = new Map<string, Color & { count: number }>();
+    cells.forEach((cell) => {
+      const item = counts.get(cell.code);
+      if (item) item.count += 1;
+      else counts.set(cell.code, { ...cell, count: 1 });
+    });
+    const next = {
+      ...pattern,
+      cells,
+      usage: Array.from(counts.values()).sort((a, b) => b.count - a.count),
+    };
+    setEditHistory((historyItems) => [...historyItems.slice(-19), pattern]);
+    setPattern(next);
+    setStatus(`已将第 ${x + 1} 列、第 ${y + 1} 行改为 ${editColor.code}`);
+  };
+  const undoPatternEdit = () => {
+    const previous = editHistory[editHistory.length - 1];
+    if (!previous) return setStatus("暂时没有可撤销的修改");
+    setPattern(previous);
+    setEditHistory((historyItems) => historyItems.slice(0, -1));
+    setStatus("已撤销上一次修改");
+  };
   const saveHistory = (current: Pattern) => {
     const canvas = document.createElement("canvas");
     const size = current.width > 116 ? 10 : 14;
@@ -749,6 +800,7 @@ export default function Home() {
   };
   const openHistory = (item: HistoryItem) => {
     setPattern(item);
+    setEditHistory([]);
     setWidth(item.width);
     setHeight(item.height);
     setPaletteMode(item.paletteMode);
@@ -973,6 +1025,7 @@ export default function Home() {
                 ref={patternCanvasRef}
                 className="pattern-canvas"
                 aria-label="完整拼豆图纸"
+                onClick={editPatternCell}
               />
             ) : (
               <div className="text-center text-[#6f6254]">
@@ -981,6 +1034,52 @@ export default function Home() {
               </div>
             )}
           </div>
+          {pattern && (
+            <div className="editor-strip mt-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="setting-label">图纸微调</p>
+                  <p className="text-xs text-[#7d756a]">
+                    选择色号后点击图纸格子即可修改
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className={`tool-button ${pickColorMode ? "selected" : ""}`}
+                    onClick={() => setPickColorMode(!pickColorMode)}
+                  >
+                    吸取颜色
+                  </button>
+                  <button
+                    type="button"
+                    className="tool-button"
+                    onClick={undoPatternEdit}
+                  >
+                    撤销
+                  </button>
+                </div>
+              </div>
+              <div className="swatch-row mt-3">
+                {activePalette.map((color) => (
+                  <button
+                    key={color.code}
+                    type="button"
+                    className={`swatch-button ${editColor?.code === color.code && !pickColorMode ? "selected" : ""}`}
+                    title={`选择 ${color.code}`}
+                    aria-label={`选择 ${color.code}`}
+                    onClick={() => {
+                      setEditColor(color);
+                      setPickColorMode(false);
+                    }}
+                  >
+                    <span style={{ backgroundColor: color.hex }} />
+                    <small>{color.code}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {pattern && (
             <>
               <div className="mt-4 flex flex-wrap gap-2">
