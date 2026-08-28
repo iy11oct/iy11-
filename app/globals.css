@@ -1,44 +1,37 @@
 @import "tailwindcss";
 
-:root {
-  --background: #f7f3eb;
-  --foreground: #1f2933;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html {
-  background: var(--background);
-}
-
-body {
-  margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family:
-    "Microsoft YaHei",
-    "PingFang SC",
-    "Segoe UI",
-    Arial,
-    sans-serif;
-}
-
-button,
-input {
-  font: inherit;
-}
-
-button {
-  cursor: pointer;
-}
-
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
-canvas {
-  image-rendering: pixelated;
-}
+:root { --background: #f6f2e9; --foreground: #1f2933; }
+* { box-sizing: border-box; }
+html { background: var(--background); }
+body { margin: 0; background: var(--background); color: var(--foreground); font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif; }
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .55; }
+canvas { image-rendering: pixelated; }
+.setting-label { display: block; font-size: .82rem; font-weight: 600; color: #4a5562; }
+.upload-zone { transition: border-color .2s, background .2s; }
+.upload-zone:hover { border-color: #315c58; background: #edf6ea; }
+.setting-button, .small-choice, .tool-button, .secondary-button { border: 1px solid #cfc6b8; border-radius: 6px; background: #fff; color: #3b4650; transition: .15s ease; }
+.setting-button { padding: .55rem .35rem; font-size: .86rem; font-weight: 600; }
+.small-choice { padding: .45rem .15rem; font-size: .73rem; }
+.setting-button:hover, .small-choice:hover, .tool-button:hover, .secondary-button:hover { border-color: #315c58; color: #315c58; }
+.setting-button.selected, .small-choice.selected { border-color: #315c58; background: #315c58; color: white; }
+.number-input, .select-input { width: 100%; margin-top: .3rem; border: 1px solid #cfc6b8; border-radius: 6px; background: white; padding: .55rem .65rem; color: #1f2933; }
+.toggle-row { display: flex; min-height: 40px; align-items: center; gap: .45rem; border: 1px solid #e0d8cc; border-radius: 6px; background: #fbfaf7; padding: .45rem .5rem; font-size: .73rem; color: #53605d; }
+.toggle-row input { accent-color: #315c58; }
+.range-row { display: grid; grid-template-columns: 54px 1fr; align-items: center; gap: .5rem; font-size: .8rem; color: #53605d; }
+.range-row input { width: 100%; accent-color: #315c58; }
+.primary-button { border: 1px solid #315c58; border-radius: 6px; background: #315c58; padding: .68rem 1rem; color: #fff; font-size: .88rem; font-weight: 700; box-shadow: 0 2px 5px rgba(49, 92, 88, .14); }
+.primary-button:hover { background: #264b48; }
+.tool-button, .secondary-button { padding: .52rem .75rem; font-size: .8rem; font-weight: 600; }
+.pattern-stage { display: flex; min-height: min(68vh, 720px); max-height: 780px; align-items: center; justify-content: center; overflow: auto; border-radius: 7px; background: #e9e2d7; padding: 18px; touch-action: pan-x pan-y pinch-zoom; }
+.pattern-canvas { max-width: none; border-radius: 4px; background: white; box-shadow: 0 8px 24px rgba(47, 55, 48, .13); }
+.stat-box { display: flex; flex-direction: column; gap: .2rem; border-radius: 6px; background: #f3f8f0; padding: .65rem; color: #65706c; }
+.stat-box strong { color: #1f2933; font-size: 1.35rem; }
+.color-swatch { display: block; width: 25px; height: 25px; border: 1px solid rgba(0,0,0,.12); border-radius: 4px; }
+.history-item { overflow: hidden; border: 1px solid #dcd3c5; border-radius: 6px; background: #fffdf8; padding: .35rem; text-align: left; }
+.history-item:hover { border-color: #315c58; }
+.history-item img { display: block; aspect-ratio: 1; width: 100%; object-fit: contain; background: #eee7dc; }
+.history-item span { display: block; padding: .4rem .15rem .15rem; font-size: .78rem; font-weight: 600; color: #53605d; }
+@media (min-width: 1024px) { .pattern-stage { position: sticky; top: 12px; } }
+@media (max-width: 640px) { .pattern-stage { min-height: 420px; padding: 10px; } .primary-button, .secondary-button, .tool-button { min-height: 42px; } }
