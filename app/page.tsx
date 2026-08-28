@@ -28,7 +28,7 @@ type HistoryItem = Pattern & {
 type PaletteMode = "common36" | "common48" | "mard221";
 type StyleMode = "photo" | "maker" | "cartoon";
 type Friendliness = "detail" | "balanced" | "easy";
-type BackgroundMode = "original" | "remove";
+type BackgroundMode = "original";
 
 const presets = [
   { label: "29 × 29", width: 29, height: 29 },
@@ -71,16 +71,12 @@ export default function Home() {
   const [paletteStatus, setPaletteStatus] = useState("正在加载色卡");
   const [imageUrl, setImageUrl] = useState("");
   const [baseImageUrl, setBaseImageUrl] = useState("");
-  const [cutoutImageUrl, setCutoutImageUrl] = useState("");
   const [imageName, setImageName] = useState("");
   const [cropUrl, setCropUrl] = useState("");
   const [cropOpen, setCropOpen] = useState(false);
   const [cropScale, setCropScale] = useState(1);
   const [cropRotation, setCropRotation] = useState(0);
   const [cropOffset, setCropOffset] = useState({ x: 0, y: 0 });
-  const [backgroundMode, setBackgroundMode] =
-    useState<BackgroundMode>("original");
-  const [removeStrength, setRemoveStrength] = useState(54);
   const [isProcessing, setIsProcessing] = useState(false);
   const [pattern, setPattern] = useState<Pattern | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -144,7 +140,6 @@ export default function Home() {
     if (cropUrl.startsWith("blob:")) URL.revokeObjectURL(cropUrl);
     const next = URL.createObjectURL(file);
     setImageName(file.name);
-    setCutoutImageUrl("");
     setCropUrl(next);
     setCropScale(1);
     setCropRotation(0);
@@ -215,9 +210,7 @@ export default function Home() {
       );
       const cropped = canvas.toDataURL("image/png");
       setBaseImageUrl(cropped);
-      setCutoutImageUrl("");
       setImageUrl(cropped);
-      setBackgroundMode("original");
       setPattern(null);
       setCropOpen(false);
       if (cropUrl.startsWith("blob:")) URL.revokeObjectURL(cropUrl);
@@ -452,36 +445,6 @@ export default function Home() {
     );
     return spread < 90 && average[0] + average[1] + average[2] < 720;
   };
-  const applyModelBackground = async () => {
-    const sourceUrl = baseImageUrl || imageUrl;
-    if (!sourceUrl) {
-      setStatus("请先上传并裁剪图片");
-      return;
-    }
-    if (cutoutImageUrl) {
-      setImageUrl(cutoutImageUrl);
-      setBackgroundMode("remove");
-      setPattern(null);
-      setStatus("已切换到抠图结果，可以生成图纸");
-      return;
-    }
-    setIsProcessing(true);
-    setStatus("正在去除图片背景");
-    try {
-      const cleaned = await keyOutFlatBackground(sourceUrl);
-      const nextCutoutUrl = URL.createObjectURL(cleaned);
-      setCutoutImageUrl(nextCutoutUrl);
-      setImageUrl(nextCutoutUrl);
-      setBackgroundMode("remove");
-      setPattern(null);
-      setStatus("已去除背景，可以生成图纸");
-    } catch (error) {
-      console.error("抠图失败", error);
-      setStatus("抠图失败，请重试或使用原图");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
   const findColor = (
     rgb: [number, number, number],
     candidates: Array<Color & { lab: readonly [number, number, number] }>,
@@ -527,10 +490,9 @@ export default function Home() {
             ? Math.min(36, sourcePalette.length)
             : sourcePalette.length,
         palette: sourcePalette,
-        backgroundMode: backgroundMode === "original" ? "keep" : "remove-white",
+        backgroundMode: "keep",
         backgroundColor: [255, 255, 255],
-        tolerance:
-          backgroundMode === "remove" ? Math.max(28, removeStrength * 2.2) : 48,
+        tolerance: 48,
         speckleReduction: reduceNoise ? (friendliness === "easy" ? 4 : 3) : 0,
         generationStyle: styleMode === "photo" ? "realistic" : "cartoon",
       });
@@ -874,56 +836,6 @@ export default function Home() {
               >
                 重新裁剪
               </button>
-              <div className="processing-panel mt-4">
-                <p className="setting-label">图片处理</p>
-                <div className="mt-2 grid grid-cols-2 gap-1">
-                  <button
-                    type="button"
-                    className={`small-choice ${backgroundMode === "original" ? "selected" : ""}`}
-                    onClick={() => {
-                      setBackgroundMode("original");
-                      setImageUrl(baseImageUrl);
-                      setPattern(null);
-                      setStatus("已切换回原图，可以生成图纸");
-                    }}
-                  >
-                    原图
-                  </button>
-                  <button
-                    type="button"
-                    className={`small-choice ${backgroundMode === "remove" ? "selected" : ""}`}
-                    onClick={() => {
-                      setBackgroundMode("remove");
-                      applyModelBackground();
-                    }}
-                  >
-                    自动抠图
-                  </button>
-                </div>
-                {backgroundMode === "remove" && (
-                  <label className="mt-3 block">
-                    <span className="setting-label">抠图强度</span>
-                    <input
-                      className="range-input"
-                      type="range"
-                      min="24"
-                      max="100"
-                      value={removeStrength}
-                      onChange={(event) => {
-                        const value = Number(event.target.value);
-                        setRemoveStrength(value);
-                      }}
-                    />
-                  </label>
-                )}
-                <p className="mt-2 text-xs text-[#8a8377]">
-                  {isProcessing
-                    ? "正在处理图片..."
-                    : backgroundMode === "remove"
-                      ? "智能模型适合人物、宠物和卡通主体"
-                      : "生成时将使用当前预览效果"}
-                </p>
-              </div>
             </div>
           ) : (
             <div className="mt-4 flex aspect-square items-center justify-center rounded-md border border-[#ded6c8] bg-[#f9f5ec] text-sm text-[#6f6254]">
