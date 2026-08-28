@@ -886,27 +886,62 @@ export default function Home() {
   };
   const downloadUsage = () => {
     if (!pattern) return setStatus("请先生成图纸");
-    const lines = [
-      "色号,颜色,数量,建议购买数量",
-      ...pattern.usage.map(
-        (item) =>
-          `${item.code},${item.hex},${item.count},${Math.ceil(item.count * 1.08)}`,
-      ),
-    ];
-    const blob = new Blob(["\ufeff" + lines.join("\n")], {
-      type: "text/csv;charset=utf-8",
+    const rowHeight = 64;
+    const canvas = document.createElement("canvas");
+    canvas.width = 900;
+    canvas.height = 150 + pattern.usage.length * rowHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return setStatus("颜色清单生成失败，请重试");
+    ctx.fillStyle = "#fffaf0";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#3f726b";
+    ctx.fillRect(0, 0, canvas.width, 12);
+    ctx.fillStyle = "#293b3a";
+    ctx.font = "700 30px Microsoft YaHei, sans-serif";
+    ctx.fillText("拼豆颜色清单", 42, 62);
+    ctx.fillStyle = "#7d756a";
+    ctx.font = "16px Microsoft YaHei, sans-serif";
+    ctx.fillText(
+      `${pattern.width} × ${pattern.height} · 共 ${pattern.usage.reduce((sum, item) => sum + item.count, 0)} 颗`,
+      42,
+      96,
+    );
+    pattern.usage.forEach((item, index) => {
+      const y = 126 + index * rowHeight;
+      ctx.strokeStyle = "#e0d3bf";
+      ctx.beginPath();
+      ctx.moveTo(38, y + rowHeight - 1);
+      ctx.lineTo(canvas.width - 38, y + rowHeight - 1);
+      ctx.stroke();
+      ctx.fillStyle = item.hex;
+      ctx.fillRect(44, y + 10, 42, 42);
+      ctx.strokeStyle = "rgba(30,40,35,.25)";
+      ctx.strokeRect(44.5, y + 10.5, 41, 41);
+      ctx.fillStyle = "#293b3a";
+      ctx.font = "700 20px Microsoft YaHei, sans-serif";
+      ctx.fillText(item.code, 112, y + 37);
+      ctx.font = "18px Microsoft YaHei, sans-serif";
+      ctx.fillText(item.hex.toUpperCase(), 235, y + 37);
+      ctx.fillText(`需要 ${item.count} 颗`, 480, y + 37);
+      ctx.fillStyle = "#7d756a";
+      ctx.fillText(`建议备 ${Math.ceil(item.count * 1.08)} 颗`, 690, y + 37);
     });
-    const link = document.createElement("a");
-    link.download = `拼豆颜色清单-${pattern.width}x${pattern.height}.csv`;
-    link.href = URL.createObjectURL(blob);
-    link.click();
-    URL.revokeObjectURL(link.href);
+    canvas.toBlob((blob) => {
+      if (!blob) return setStatus("颜色清单生成失败，请重试");
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.download = `拼豆颜色清单-${pattern.width}x${pattern.height}.png`;
+      link.href = url;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setStatus("颜色清单图片已生成，请保存到相册");
+    }, "image/png");
   };
 
   return (
     <main className="min-h-screen bg-[#f6f2e9] text-[#1f2933]">
       <header className="border-b border-[#dcd3c5] bg-[#fffdf8]">
-        <div className="mx-auto max-w-6xl px-4 py-5 sm:px-7">
+        <div className="mx-auto max-w-7xl px-4 py-5 sm:px-7">
           <p className="text-sm font-semibold tracking-wide text-[#315c58]">
             图片转拼豆图纸 · 第五版
           </p>
@@ -918,7 +953,7 @@ export default function Home() {
           </p>
         </div>
       </header>
-      <section className="mx-auto grid max-w-6xl gap-4 px-4 py-5 sm:px-7 lg:grid-cols-[320px_minmax(0,1fr)]">
+      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-5 sm:px-7 lg:grid-cols-[300px_minmax(0,1fr)]">
         <aside className="rounded-lg border border-[#dcd3c5] bg-[#fffdf8] p-4 shadow-sm">
           <h2 className="text-lg font-semibold">1. 准备图片</h2>
           <div className="upload-zone mt-4 rounded-md border border-dashed border-[#aebdb0] bg-[#f5faf2] p-5 text-center">
@@ -1184,7 +1219,7 @@ export default function Home() {
                   className="secondary-button"
                   onClick={downloadUsage}
                 >
-                  保存颜色清单
+                  保存颜色清单图片
                 </button>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3 text-sm">

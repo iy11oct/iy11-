@@ -204,7 +204,7 @@ canvas {
 }
 .result-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr) 280px;
   align-items: start;
   gap: 16px;
 }
