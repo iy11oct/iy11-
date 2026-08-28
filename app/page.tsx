@@ -97,6 +97,7 @@ export default function Home() {
   const [pickColorMode, setPickColorMode] = useState(false);
   const [editHistory, setEditHistory] = useState<Pattern[]>([]);
   const [patternZoom, setPatternZoom] = useState(1);
+  const [patternPan, setPatternPan] = useState({ x: 0, y: 0 });
   const [status, setStatus] = useState("上传图片后开始制作");
   const imageRef = useRef<HTMLImageElement | null>(null);
   const patternCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -763,6 +764,35 @@ export default function Home() {
       clamp(zoom + (event.deltaY < 0 ? 0.1 : -0.1), 0.5, 3),
     );
   };
+  const patternPanRef = useRef<{
+    x: number;
+    y: number;
+    originX: number;
+    originY: number;
+  } | null>(null);
+  const handlePatternPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 1) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    patternPanRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      originX: patternPan.x,
+      originY: patternPan.y,
+    };
+  };
+  const handlePatternPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (!patternPanRef.current) return;
+    setPatternPan({
+      x:
+        patternPanRef.current.originX + event.clientX - patternPanRef.current.x,
+      y:
+        patternPanRef.current.originY + event.clientY - patternPanRef.current.y,
+    });
+  };
+  const handlePatternPointerEnd = () => {
+    patternPanRef.current = null;
+  };
   const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
   const handlePatternTouchStart = (event: TouchEvent<HTMLDivElement>) => {
     if (event.touches.length !== 2) return;
@@ -1056,6 +1086,11 @@ export default function Home() {
             <div
               className="pattern-stage"
               onWheel={handlePatternWheel}
+              onPointerDown={handlePatternPointerDown}
+              onPointerMove={handlePatternPointerMove}
+              onPointerUp={handlePatternPointerEnd}
+              onPointerCancel={handlePatternPointerEnd}
+              onPointerLeave={handlePatternPointerEnd}
               onTouchStart={handlePatternTouchStart}
               onTouchMove={handlePatternTouchMove}
               onTouchEnd={handlePatternTouchEnd}
@@ -1070,6 +1105,7 @@ export default function Home() {
                   style={{
                     width: `${patternZoom * 100}%`,
                     maxWidth: patternZoom > 1 ? "none" : "100%",
+                    transform: `translate(${patternPan.x}px, ${patternPan.y}px)`,
                   }}
                 />
               ) : (

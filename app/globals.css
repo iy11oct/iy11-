@@ -171,6 +171,7 @@ canvas {
 }
 .pattern-stage {
   display: flex;
+  aspect-ratio: 1 / 1;
   min-height: min(70vh, 760px);
   max-height: 820px;
   align-items: center;
@@ -180,6 +181,7 @@ canvas {
   background: #d9c8ad;
   padding: 18px;
   touch-action: pan-x pan-y pinch-zoom;
+  overscroll-behavior: contain;
   box-shadow:
     inset 0 0 0 1px rgba(112, 86, 57, 0.12),
     5px 6px 0 rgba(121, 92, 62, 0.14);
@@ -192,6 +194,7 @@ canvas {
   background: white;
   box-shadow: 0 8px 16px rgba(47, 55, 48, 0.16);
   cursor: crosshair;
+  transform-origin: center center;
 }
 .editor-strip {
   border-top: 1px dashed #cbbda8;
@@ -421,8 +424,8 @@ main.min-h-screen h1 {
     position: sticky;
     z-index: 2;
     top: 16px;
-    height: calc(100vh - 32px);
-    min-height: 460px;
+    height: auto;
+    min-height: 0;
     max-height: calc(100vh - 32px);
     overscroll-behavior: contain;
   }
@@ -437,7 +440,7 @@ main.min-h-screen h1 {
     margin-top: 12px;
   }
   .pattern-stage {
-    min-height: 440px;
+    min-height: 0;
     padding: 10px;
   }
   .primary-button,
