@@ -83,13 +83,13 @@ export default function Home() {
   const [width, setWidth] = useState(58);
   const [height, setHeight] = useState(58);
   const [paletteMode, setPaletteMode] = useState<PaletteMode>("common48");
-  const [styleMode, setStyleMode] = useState<StyleMode>("maker");
-  const [friendliness, setFriendliness] = useState<Friendliness>("balanced");
+  const styleMode: StyleMode = "maker";
+  const friendliness: Friendliness = "detail";
   const [showCodes, setShowCodes] = useState(false);
   const [omitWhite, setOmitWhite] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
   const [reduceNoise, setReduceNoise] = useState(true);
-  const [dithering, setDithering] = useState(false);
+  const dithering = false;
   const [status, setStatus] = useState("上传图片后开始制作");
   const imageRef = useRef<HTMLImageElement | null>(null);
   const patternCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -752,8 +752,6 @@ export default function Home() {
     setWidth(item.width);
     setHeight(item.height);
     setPaletteMode(item.paletteMode);
-    setStyleMode(item.styleMode);
-    setFriendliness(item.friendliness);
     setStatus(`已打开 ${item.sourceName || "历史图纸"}`);
   };
   const removeHistory = (id: string) => {
@@ -910,36 +908,11 @@ export default function Home() {
           </label>
           <label className="mt-3 block">
             <span className="setting-label">转换效果</span>
-            <select
-              className="select-input"
-              value={styleMode}
-              onChange={(e) => setStyleMode(e.target.value as StyleMode)}
-            >
-              <option value="maker">适合制作</option>
-              <option value="cartoon">卡通效果</option>
-              <option value="photo">还原照片</option>
-            </select>
+            <div className="small-choice selected mt-2">适合制作</div>
           </label>
           <div className="mt-3">
             <p className="setting-label">拼豆友好度</p>
-            <div className="mt-2 grid grid-cols-3 gap-1">
-              {(
-                [
-                  ["detail", "细节优先"],
-                  ["balanced", "平衡"],
-                  ["easy", "易制作"],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  className={`small-choice ${friendliness === value ? "selected" : ""}`}
-                  onClick={() => setFriendliness(value)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+            <div className="small-choice selected mt-2">细节优先</div>
           </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             <label className="toggle-row">
@@ -949,14 +922,6 @@ export default function Home() {
                 onChange={(e) => setReduceNoise(e.target.checked)}
               />
               合并孤立杂色
-            </label>
-            <label className="toggle-row">
-              <input
-                type="checkbox"
-                checked={dithering}
-                onChange={(e) => setDithering(e.target.checked)}
-              />
-              抖动处理
             </label>
             <label className="toggle-row sm:col-span-2">
               <input
