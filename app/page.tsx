@@ -28,7 +28,7 @@ type HistoryItem = Pattern & {
 type PaletteMode = "common36" | "common48" | "mard221";
 type StyleMode = "photo" | "maker" | "cartoon";
 type Friendliness = "detail" | "balanced" | "easy";
-type BackgroundMode = "original" | "remove" | "white";
+type BackgroundMode = "original" | "remove";
 
 const presets = [
   { label: "29 × 29", width: 29, height: 29 },
@@ -71,6 +71,7 @@ export default function Home() {
   const [paletteStatus, setPaletteStatus] = useState("正在加载色卡");
   const [imageUrl, setImageUrl] = useState("");
   const [baseImageUrl, setBaseImageUrl] = useState("");
+  const [cutoutImageUrl, setCutoutImageUrl] = useState("");
   const [imageName, setImageName] = useState("");
   const [cropUrl, setCropUrl] = useState("");
   const [cropOpen, setCropOpen] = useState(false);
@@ -143,6 +144,7 @@ export default function Home() {
     if (cropUrl.startsWith("blob:")) URL.revokeObjectURL(cropUrl);
     const next = URL.createObjectURL(file);
     setImageName(file.name);
+    setCutoutImageUrl("");
     setCropUrl(next);
     setCropScale(1);
     setCropRotation(0);
@@ -213,6 +215,7 @@ export default function Home() {
       );
       const cropped = canvas.toDataURL("image/png");
       setBaseImageUrl(cropped);
+      setCutoutImageUrl("");
       setImageUrl(cropped);
       setBackgroundMode("original");
       setPattern(null);
@@ -455,12 +458,22 @@ export default function Home() {
       setStatus("请先上传并裁剪图片");
       return;
     }
+    if (cutoutImageUrl) {
+      setImageUrl(cutoutImageUrl);
+      setBackgroundMode("remove");
+      setPattern(null);
+      setStatus("已切换到抠图结果，可以生成图纸");
+      return;
+    }
     setIsProcessing(true);
     setStatus("正在去除图片背景");
     try {
       const cleaned = await keyOutFlatBackground(sourceUrl);
-      setImageUrl(URL.createObjectURL(cleaned));
+      const nextCutoutUrl = URL.createObjectURL(cleaned);
+      setCutoutImageUrl(nextCutoutUrl);
+      setImageUrl(nextCutoutUrl);
       setBackgroundMode("remove");
+      setPattern(null);
       setStatus("已去除背景，可以生成图纸");
     } catch (error) {
       console.error("抠图失败", error);
@@ -493,7 +506,9 @@ export default function Home() {
     try {
       const response = await fetch(imageUrl);
       const blob = await response.blob();
-      const file = new File([blob], imageName || "image.png", { type: blob.type || "image/png" });
+      const file = new File([blob], imageName || "image.png", {
+        type: blob.type || "image/png",
+      });
       const w = clamp(Math.round(width), 8, 160);
       const sourcePalette = activePalette.map((color) => ({
         id: `local-${color.code}`,
@@ -507,17 +522,28 @@ export default function Home() {
       }));
       const result = await imageFileToBeads(file, {
         width: w,
-        maxColors: friendliness === "easy" ? Math.min(36, sourcePalette.length) : sourcePalette.length,
+        maxColors:
+          friendliness === "easy"
+            ? Math.min(36, sourcePalette.length)
+            : sourcePalette.length,
         palette: sourcePalette,
         backgroundMode: backgroundMode === "original" ? "keep" : "remove-white",
         backgroundColor: [255, 255, 255],
-        tolerance: backgroundMode === "remove" ? Math.max(28, removeStrength * 2.2) : 48,
+        tolerance:
+          backgroundMode === "remove" ? Math.max(28, removeStrength * 2.2) : 48,
         speckleReduction: reduceNoise ? (friendliness === "easy" ? 4 : 3) : 0,
         generationStyle: styleMode === "photo" ? "realistic" : "cartoon",
       });
-      const byId = new Map(sourcePalette.map((color, index) => [color.id, activePalette[index]]));
-      const white = palette.find((color) => color.code === "H2") || palette.find((color) => color.code === "T1") || activePalette[0];
-      const cells = result.cells.map((id) => (id ? byId.get(id) || white : white));
+      const byId = new Map(
+        sourcePalette.map((color, index) => [color.id, activePalette[index]]),
+      );
+      const white =
+        palette.find((color) => color.code === "H2") ||
+        palette.find((color) => color.code === "T1") ||
+        activePalette[0];
+      const cells = result.cells.map((id) =>
+        id ? byId.get(id) || white : white,
+      );
       const counts = new Map<string, Color & { count: number }>();
       cells.forEach((cell) => {
         const item = counts.get(cell.code);
@@ -533,7 +559,9 @@ export default function Home() {
       setWidth(result.width);
       setHeight(result.height);
       setPattern(next);
-      setStatus(`已生成 ${result.width} × ${result.height} 图纸，共 ${next.usage.length} 个色号`);
+      setStatus(
+        `已生成 ${result.width} × ${result.height} 图纸，共 ${next.usage.length} 个色号`,
+      );
       window.setTimeout(() => saveHistory(next), 50);
     } catch (error) {
       console.error("开源算法生成失败", error);
@@ -848,13 +876,15 @@ export default function Home() {
               </button>
               <div className="processing-panel mt-4">
                 <p className="setting-label">图片处理</p>
-                <div className="mt-2 grid grid-cols-3 gap-1">
+                <div className="mt-2 grid grid-cols-2 gap-1">
                   <button
                     type="button"
                     className={`small-choice ${backgroundMode === "original" ? "selected" : ""}`}
                     onClick={() => {
                       setBackgroundMode("original");
-                      applyBackground("original");
+                      setImageUrl(baseImageUrl);
+                      setPattern(null);
+                      setStatus("已切换回原图，可以生成图纸");
                     }}
                   >
                     原图
@@ -868,16 +898,6 @@ export default function Home() {
                     }}
                   >
                     自动抠图
-                  </button>
-                  <button
-                    type="button"
-                    className={`small-choice ${backgroundMode === "white" ? "selected" : ""}`}
-                    onClick={() => {
-                      setBackgroundMode("white");
-                      applyBackground("white");
-                    }}
-                  >
-                    白色背景
                   </button>
                 </div>
                 {backgroundMode === "remove" && (
