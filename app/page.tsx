@@ -4,6 +4,8 @@ import {
   ChangeEvent,
   MouseEvent,
   PointerEvent,
+  TouchEvent,
+  WheelEvent,
   useEffect,
   useMemo,
   useRef,
@@ -94,6 +96,7 @@ export default function Home() {
   const [editColor, setEditColor] = useState<Color | null>(null);
   const [pickColorMode, setPickColorMode] = useState(false);
   const [editHistory, setEditHistory] = useState<Pattern[]>([]);
+  const [patternZoom, setPatternZoom] = useState(1);
   const [status, setStatus] = useState("上传图片后开始制作");
   const imageRef = useRef<HTMLImageElement | null>(null);
   const patternCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -754,6 +757,36 @@ export default function Home() {
     setPattern(next);
     setStatus(`已将第 ${x + 1} 列、第 ${y + 1} 行改为 ${editColor.code}`);
   };
+  const handlePatternWheel = (event: WheelEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setPatternZoom((zoom) =>
+      clamp(zoom + (event.deltaY < 0 ? 0.1 : -0.1), 0.5, 3),
+    );
+  };
+  const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
+  const handlePatternTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    if (event.touches.length !== 2) return;
+    const dx = event.touches[0].clientX - event.touches[1].clientX;
+    const dy = event.touches[0].clientY - event.touches[1].clientY;
+    pinchRef.current = { distance: Math.hypot(dx, dy), zoom: patternZoom };
+  };
+  const handlePatternTouchMove = (event: TouchEvent<HTMLDivElement>) => {
+    if (event.touches.length !== 2 || !pinchRef.current) return;
+    event.preventDefault();
+    const dx = event.touches[0].clientX - event.touches[1].clientX;
+    const dy = event.touches[0].clientY - event.touches[1].clientY;
+    const distance = Math.hypot(dx, dy);
+    setPatternZoom(
+      clamp(
+        pinchRef.current.zoom * (distance / pinchRef.current.distance),
+        0.5,
+        3,
+      ),
+    );
+  };
+  const handlePatternTouchEnd = () => {
+    pinchRef.current = null;
+  };
   const undoPatternEdit = () => {
     const previous = editHistory[editHistory.length - 1];
     if (!previous) return setStatus("暂时没有可撤销的修改");
@@ -1020,13 +1053,24 @@ export default function Home() {
             </div>
           </div>
           <div className="result-layout mt-3">
-            <div className="pattern-stage">
+            <div
+              className="pattern-stage"
+              onWheel={handlePatternWheel}
+              onTouchStart={handlePatternTouchStart}
+              onTouchMove={handlePatternTouchMove}
+              onTouchEnd={handlePatternTouchEnd}
+              onTouchCancel={handlePatternTouchEnd}
+            >
               {pattern ? (
                 <canvas
                   ref={patternCanvasRef}
                   className="pattern-canvas"
                   aria-label="完整拼豆图纸"
                   onClick={editPatternCell}
+                  style={{
+                    width: `${patternZoom * 100}%`,
+                    maxWidth: patternZoom > 1 ? "none" : "100%",
+                  }}
                 />
               ) : (
                 <div className="text-center text-[#6f6254]">
