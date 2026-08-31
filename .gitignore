@@ -36,3 +36,5 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+/bead-*.tar.gz
+/xiaoy-tuzhi-zuofang-static.zip
